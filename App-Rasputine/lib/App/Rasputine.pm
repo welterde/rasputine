@@ -1,27 +1,37 @@
 package App::Rasputine;
 
-use warnings;
-use strict;
-use base qw( Mojo::Base );
+use Moose;
 use AnyEvent;
-use App::Rasputine::XMPP;
-use App::Rasputine::Session;
-use Params::Validate qw( :all );
+use App::Rasputine::XMPP::Component;
 
-our $VERSION = '0.01';
+our $VERSION = '0.9';
 
-##########################
-# Configuration attributes
+has xmpp_component => (
+  isa => 'App::Rasputine::XMPP::Component',
+  is  => 'rw',
+);
 
-__PACKAGE__->attr('xmpp',     chained => 1, default => {});
-__PACKAGE__->attr('services', chained => 1, default => {});
+<<<<<<< Updated upstream:App-Rasputine/lib/App/Rasputine.pm
+__PACKAGE__->attr('xmpp',     chained => 1);
+__PACKAGE__->attr('services', chained => 1);
+=======
+has config => (
+  isa => 'HashRef',
+  is  => 'rw',
+  default =>  sub { {} }, 
+);
+>>>>>>> Stashed changes:App-Rasputine/lib/App/Rasputine.pm
 
-__PACKAGE__->attr('xmpp_gw');
+has keep_alive => (
+  isa => 'Object',
+  is  => 'rw',
+);
 
 
-################
-# Service access
+###############
+# Start the App
 
+<<<<<<< Updated upstream:App-Rasputine/lib/App/Rasputine.pm
 sub service {
   my ($self, $service) = @_;
   my $srvs = $self->services;
@@ -41,7 +51,7 @@ sub is_valid_service {
 #################
 # Session manager
 
-__PACKAGE__->attr('sessions', default => {});
+__PACKAGE__->attr('sessions');
 
 sub session_for {
   my $self = shift;
@@ -60,149 +70,28 @@ sub session_for {
   $user_session = $self->start_session(%args)
     unless $user_session;
   
+  ## Don't forget to save the new session!!
+  $self->sessions($sessions);
   return $user_session;
 }
 
 sub start_session {
-  my $self = shift;
-  my $sessions = $self->sessions;
-  my %args = validate(@_, {
-    service => { type => SCALAR }, 
-    user    => { type => SCALAR }, 
-    via     => { type => SCALAR }, 
-  });
-
-  my $valid_services = $self->services;
-  return 'service_not_found' unless exists $valid_services->{$args{service}};
-  my $srv = $valid_services->{$args{service}};
-  
-  my $sess = $sessions->{$args{user}}{$args{service}} = App::Rasputine::Session->new({
-    %args,
-    ras => $self,
-    filters => ($srv->{filters} || []),
-  });
-  $sess->start if $sess;
-  
-  return $sess;
-}
-
-
-#########################
-# Deal with user presence
-
-sub user_offline {
-  my $self = shift;
-  my %args = validate(@_, {
-    service => { type => SCALAR }, 
-    user    => { type => SCALAR }, 
-    via     => { type => SCALAR }, 
-  });
-  
-  my $user_session = $self->session_for(%args);
-  return $user_session unless ref($user_session);
-  
-  return $user_session->disconnect();
-}
-
-sub service_state {
-  my $self = shift;
-  my %args = validate(@_, {
-    service => { type => SCALAR }, 
-    user    => { type => SCALAR }, 
-    via     => { type => SCALAR }, 
-    state   => { type => SCALAR }, 
-  });
-
-  $self->xmpp_gw->service_state(%args);
-  
-  return;
-}
-
-
-###################
-# Welcome new users
-
-sub welcome_user {
-  my $self = shift;
-  my %args = validate(@_, {
-    service => { type => SCALAR }, 
-    user    => { type => SCALAR }, 
-    via     => { type => SCALAR }, 
-  });
-
-  my $user_session = $self->session_for(%args);
-  return $user_session unless ref($user_session);
-  
-  return $user_session->welcome_user();
-}
-
-
-##########
-# Messages
-
-sub message_to_world {
-  my $self = shift;
-  my %args = validate(@_, {
-    service => { type => SCALAR }, 
-    user    => { type => SCALAR }, 
-    mesg    => { type => SCALAR }, 
-    via     => { type => SCALAR }, 
-    gateway => { type => SCALAR }, 
-  });
-  
-  my $user_session = $self->session_for({
-    service => $args{service},
-    user    => $args{user},
-    via     => $args{via},
-  });
-  return $user_session unless ref($user_session);
-
-  return $user_session->message_out({
-    mesg    => $args{mesg},
-    via     => $args{via},
-    gateway => $args{gateway},
-  });
-}
-
-sub message_to_user {
-  my $self = shift;
-  my %args = validate(@_, {
-    service => { type => SCALAR },
-    user    => { type => SCALAR }, 
-    mesg    => { type => SCALAR },
-    via     => { type => SCALAR }, 
-    gateway => { type => SCALAR }, 
-  });
-  
-  return $self->xmpp_gw->message_out(%args);
-}
-
-
-################
-# Start it up...
-
-__PACKAGE__->attr('alive', chained => 1);
-
-sub run {
+=======
+sub start {
+>>>>>>> Stashed changes:App-Rasputine/lib/App/Rasputine.pm
   my $self = shift;
   
-  $self->start_xmpp_connection;
+  # Start the XMPP component
+  my $xmpp = App::Rasputine::XMPP::Component->new({
+    app => $self,
+  });
+  $xmpp->connect;
+  $self->xmpp_component($xmpp);
   
-  my $alive = AnyEvent->condvar;
-  $self->alive($alive);
-  
-  $alive->recv;
-  
-  return;
-}
-
-sub start_xmpp_connection {
-  my $self = shift;
-  
-  my $xmpp_gw = App::Rasputine::XMPP->new({ ras => $self });
-  $xmpp_gw->start;
-
-  $self->xmpp_gw($xmpp_gw);
+  # Keep the server alive
+  my $keep_alive = AnyEvent->condvar;
+  $self->keep_alive($keep_alive);
+  $keep_alive->recv;
   
   return;
 }

@@ -18,7 +18,7 @@ __PACKAGE__->attr('via');
 __PACKAGE__->attr('world');
 __PACKAGE__->attr('ras');
 
-__PACKAGE__->attr('filters', default => []);
+__PACKAGE__->attr('filters');
 
 __PACKAGE__->attr('state', default => 'start');
 

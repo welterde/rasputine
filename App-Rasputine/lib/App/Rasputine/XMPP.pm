@@ -14,8 +14,8 @@ our $VERSION = '0.1';
 
 __PACKAGE__->attr('ras', chained => 1);
 __PACKAGE__->attr('conn', chained => 1);
-__PACKAGE__->attr('resources', default => {});
-__PACKAGE__->attr('namespace_map', default => {});
+__PACKAGE__->attr('resources');
+__PACKAGE__->attr('namespace_map');
 
 #####################
 # Presence processing

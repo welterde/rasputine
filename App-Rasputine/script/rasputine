@@ -36,8 +36,8 @@ my $config = (%{$cfgs->[0]})[1];
 ############################
 # Start the Rasputine server
 
-my $ras = App::Rasputine->new($config);
-$ras->run;
+my $ras = App::Rasputine->new({ config => $config });
+$ras->start;
 
 exit(0);
 
